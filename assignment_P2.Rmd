@@ -1,0 +1,98 @@
+---
+title: "assignment_P2"
+author: "Marcelladane"
+date: "18 August 2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+##Part 2: Basic Inferential Data Analysis Instructions
+
+Now in the second portion of the project, we're going to analyze the ToothGrowth data in the R datasets package.
+
+- Load the ToothGrowth data and perform some basic exploratory data analyses
+-Provide a basic summary of the data.
+-Use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose. (Only use the techniques from class, even if there's other approaches worth considering)
+- State your conclusions and the assumptions needed for your conclusions.
+
+Start by loading the necessary packages, here, just one for plot.
+```{r results='hide',message=FALSE}
+packages <- c("datasets","ggplot2", "gridExtra", "GGally")
+sapply(packages, require, character.only = TRUE, quietly = TRUE)
+
+```
+
+Now you can load the data
+```{r results='hide',message=FALSE}
+data(ToothGrowth)
+toothGrowth <- ToothGrowth 
+toothGrowth$dose <- as.factor(toothGrowth$dose)
+```
+This dataset shows the effect of vitamin C in tooth growth of guinea pigs
+
+Now lets take a look in how the data is organized in the table
+```{r}
+summary(toothGrowth)
+head(toothGrowth)
+```
+
+We have basically 3 columns, one with the lenght of growth, one with the supplementation type and one with the dose. 
+
+One way to analyze the effects of vitamin C in the growth is basically plotting the effects of supplement and dose versus the lenght.
+
+```{r plot1, echo=FALSE}
+p1 <- ggplot(data=toothGrowth, aes(x=dose,y=len,fill=dose)) +
+  geom_boxplot() + 
+  theme(legend.position="none") + 
+  facet_grid(.~supp) 
+
+p2 <- ggplot(data=toothGrowth, aes(x=supp,y=len,fill=supp)) +
+  geom_tile()
+
+p3 <- ggplot(data=toothGrowth, aes(x=dose,y=len,fill=dose)) +
+  geom_tile()
+
+grid.arrange(p1, p2, p3, ncol = 3, nrow=1)
+
+#ggpairs(toothGrowth, 
+#        upper = list(continuous = "density", combo = "box"),
+#        lower = list(continuous="smooth"),        
+#        colour = "dose",
+#        axisLabels='show')
+```
+In the first plot you can observe that we have a dose response, for both treatments, OJ and VC. The other 2 plots show how disperse is the data. as you can see, the VC treatment has quite high effect in some but really low in ther treatments. If counting just the dose, in tern, increase the dose increase effect, independ of treatment. 
+
+Therefore we can conclude that dose has a strong effect and treatment might have as well. Not by itself, but by the union treatment + dose. To check this assumption, we can perform an ANOVA (Analysis of variance) analysis.
+
+```{r}
+anova.analysis <- aov(len ~ supp * dose, data=toothGrowth)
+summary(anova.analysis)
+```
+
+The results showed actually a significant effect for treatment, also for dose (what we already noticed before) and finally a interaction between dose and treatment. 
+
+But, ANOVA dont tell you where the difference is. Just tells you that it has a difference, it could be in any of the doses, moreover, could be in any interaction of dose and treatment.In order to analyze this, we should perform a post-hoc test (choose Tukey because its not too conservative neither too permisive). 
+
+```{r}
+TukeyHSD(anova.analysis)
+```
+Considering a p<0.5 as significant.
+
+The results show a dose effect for the treatment VC. That means, as bigger is the dose, bigger the effect. 
+
+Finally we can check the confidence interval, as I final check of our conclusions. 
+
+```{r}
+confint(anova.analysis)
+```
+
+###Conclusions
+
+As mentioned above, both treatments show some level of effect. 
+
+But treatment OJ have a plato of response at dose 1. 
+
+In other hand, treatment VC have the highest effect and present an increase effect as the doses increase. 
+
+*Full code at: https://github.com/marcelladane/statistical_inference*
